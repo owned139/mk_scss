@@ -12,13 +12,13 @@ Compiles scss to css files.
 ## Typoscript settings
 ```
 plugin.tx_mkscss {
-	settings {
+    settings {
         ## enable/disable sourcemaps
         sourcemaps = 0
         ## Possible values are file and inline
         sourcemapType = file
         ## css output formatting: Expanded, Nested, Compressed, Compact, Crunched
         cssFormatter = Expanded
-	}
+    }
 }
 ```
