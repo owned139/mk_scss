@@ -1,0 +1,11 @@
+# default configuration
+plugin.tx_mkscss {
+    settings {
+        ## enable sourcemaps
+        sourcemaps = 1
+        ## Possible values are file and inline
+        sourcemapType = file
+        ## css output formatting: Expanded, Nested, Compressed, Compact, Crunched
+        cssFormatter = Expanded
+    }
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" product-name="mk_scss" date="2020-04-27T13:01:00+01:00">
+		<header/>
+		<body>
+			<trans-unit id="backend.clear_cache.title">
+				<source>Clear SCSS cache</source>
+			</trans-unit>
+			<trans-unit id="backend.clear_cache.description">
+				<source>Clear SCSS file cache and restart recompile process of SCSS to CSS files.</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
