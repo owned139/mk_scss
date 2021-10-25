@@ -1,4 +1,4 @@
-# Extension mk_scss for TYPO3 9.5.x and TYPO3 10.4.x
+# Extension mk_scss for TYPO3 9.5.x - 11.5.x
 
 Compiles scss to css files.
 
