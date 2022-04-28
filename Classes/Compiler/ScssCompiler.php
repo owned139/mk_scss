@@ -113,7 +113,13 @@ class ScssCompiler implements SingletonInterface
      */
     public function getCompiledFilename(string $relFilePath): string
     {
+        /*
         if (PathUtility::isExtensionPath($relFilePath)) {
+            $relFilePath = str_replace('EXT:', 'typo3conf/ext/', $relFilePath);
+        }
+        */
+
+        if (substr($relFilePath, 0, 4) === 'EXT:') {
             $relFilePath = str_replace('EXT:', 'typo3conf/ext/', $relFilePath);
         }
 

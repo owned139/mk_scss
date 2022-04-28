@@ -27,6 +27,9 @@ namespace MK\MkScss\Hooks;
 use MK\MkScss\Compiler\ScssCompiler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Http\ApplicationType;
+use TYPO3\CMS\Core\Information\Typo3Version;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Hook to compile scss to css
@@ -41,6 +44,11 @@ class PageRendererHook
     protected $scssCompiler = null;
 
     /**
+     * @var Typo3Version
+     */
+    protected $typo3Version = null;
+
+    /**
      * Checks for scss files and replaces them with the compiled css file
      * 
      * @param array &$params
@@ -49,7 +57,7 @@ class PageRendererHook
      */
     public function RenderPreProcess(array &$params, PageRenderer &$pagerenderer): void
     {
-        if (!empty($params['cssFiles'])) {
+        if (!empty($params['cssFiles']) && $this->isFrontend()) {
             $cssFiles = [];
 
             if ($this->scssCompiler === null) {
@@ -67,5 +75,23 @@ class PageRendererHook
 
             $params['cssFiles'] = $cssFiles;
         }
+    }
+
+    /**
+     * Checks if we are in the frontend
+     * 
+     * @return bool
+     */
+    protected function isFrontend(): bool
+    {
+        if (!$this->typo3Version) {
+            $this->typo3Version = new Typo3Version();
+        }
+
+        if ($this->typo3Version->getMajorVersion() >= 11 && $GLOBALS['TYPO3_REQUEST'] instanceof ServerRequestInterface) {
+            return ApplicationType::fromRequest($GLOBALS['TYPO3_REQUEST'])->isFrontend();
+        }
+        
+        return TYPO3_MODE === 'FE';
     }
 }
