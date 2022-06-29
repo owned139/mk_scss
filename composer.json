@@ -1,0 +1,23 @@
+{
+	"name": "mk/mk-scss",
+	"type": "typo3-cms-extension",
+	"description": "An SCSS compiler",
+	"require": {
+		"php" : "^7.2",
+		"typo3/cms-core": "^9.5 || ^10.4 || ^11.5"
+	},
+	"authors": {
+		"name": "Michell Kalb",
+		"role": "Developer"
+	},
+	"autoload": {
+		"psr-4": {
+			"MK\\MkScss\\": "Classes/"
+		}
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "mk_scss"
+		}
+	}
+}
