@@ -88,10 +88,10 @@ class PageRendererHook
             $this->typo3Version = new Typo3Version();
         }
 
-        if ($this->typo3Version->getMajorVersion() >= 11 && $GLOBALS['TYPO3_REQUEST'] instanceof ServerRequestInterface) {
+        if ($GLOBALS['TYPO3_REQUEST'] instanceof ServerRequestInterface) {
             return ApplicationType::fromRequest($GLOBALS['TYPO3_REQUEST'])->isFrontend();
         }
         
-        return TYPO3_MODE === 'FE';
+        return false;
     }
 }

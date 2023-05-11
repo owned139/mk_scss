@@ -5,7 +5,7 @@ plugin.tx_mkscss {
         sourcemaps = 1
         ## Possible values are file and inline
         sourcemapType = file
-        ## css output formatting: Expanded, Nested, Compressed, Compact, Crunched
+        ## css output formatting: Expanded, Compressed
         cssFormatter = Expanded
     }
 }

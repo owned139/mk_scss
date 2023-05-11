@@ -1,0 +1,13 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  MK\MkScss\:
+    resource: '../Classes/*'
+
+  MK\MkScss\Backend\EventListener\CacheActionsEventListener:
+    tags:
+      - name: event.listener
+        identifier: 'mk-scss/toolbar/cache-actions-event-listener'

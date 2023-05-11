@@ -24,10 +24,10 @@ namespace MK\MkScss\Compiler;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Utility\{GeneralUtility,PathUtility,ExtensionManagementUtility};
+use TYPO3\CMS\Core\Utility\{GeneralUtility,PathUtility};
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\SingletonInterface;
-use ScssPhp\ScssPhp\{Compiler,Formatter};
+use ScssPhp\ScssPhp\{Compiler,OutputStyle};
 
 /**
  * Compiles scss files to css
@@ -67,6 +67,11 @@ class ScssCompiler implements SingletonInterface
     protected $settings = [];
 
     /**
+     * @var array
+     */
+    protected $importFilePaths = [];
+
+    /**
      * Initialize
      */
     public function __construct()
@@ -83,14 +88,19 @@ class ScssCompiler implements SingletonInterface
 
         if (!empty($GLOBALS['TSFE']) && !empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_mkscss.']['settings.'])) {
             $this->settings = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_mkscss.']['settings.'];
-        }
-
-        if (!class_exists(Compiler::class)) {
-            require_once(ExtensionManagementUtility::extPath('mk_scss') . 'Vendor/scssphp-1.1.0/scss.inc.php');
+            $this->settings['sourcemapType'] = $this->settings['sourcemapType'] ?? 'file';
+            $this->settings['sourcemaps'] = $this->settings['sourcemaps'] ?? '0';
+            $this->settings['cssFormatter'] = $this->settings['cssFormatter'] ?? 'Expanded';
         }
 
         $this->compiler = GeneralUtility::makeInstance(Compiler::class);
-        $this->compiler->setFormatter(Formatter::class . '\\' . $this->settings['cssFormatter']);
+        $cssFormatter = strtolower((string)$this->settings['cssFormatter']);
+
+        if ($cssFormatter === 'compressed') {
+            $this->compiler->setOutputStyle(OutputStyle::COMPRESSED);
+        } else {
+            $this->compiler->setOutputStyle(OutputStyle::EXPANDED);
+        }
 
         if ($this->settings['sourcemapType'] === 'file' && $this->settings['sourcemaps'] === '1') {
             $this->compiler->setSourceMap(Compiler::SOURCE_MAP_FILE);
@@ -113,26 +123,21 @@ class ScssCompiler implements SingletonInterface
      */
     public function getCompiledFilename(string $relFilePath): string
     {
-        /*
         if (PathUtility::isExtensionPath($relFilePath)) {
-            $relFilePath = str_replace('EXT:', 'typo3conf/ext/', $relFilePath);
-        }
-        */
-
-        if (substr($relFilePath, 0, 4) === 'EXT:') {
-            $relFilePath = str_replace('EXT:', 'typo3conf/ext/', $relFilePath);
+            // $absFilePath = GeneralUtility::getFileAbsFileName($relFilePath);
+            $relFilePath = trim(PathUtility::getPublicResourceWebPath($relFilePath), '/');
         }
 
-        $outFilePath = $this->cacheDir . $this->getFilenameHashed($relFilePath) . '.css';
+        $fileNameHashed = $this->getFilenameHashed($relFilePath) . '.css';
+        $outFilePath = $this->cacheDir . $fileNameHashed;
 
         if ($this->compiledFileExpired($relFilePath, $outFilePath)) {
             $this->compile($relFilePath, $outFilePath);
-            $relFilePath = $outFilePath;
-        } elseif (file_exists($this->sitePath . $outFilePath)) {
-            $relFilePath = $outFilePath;
+        } elseif (!file_exists($this->sitePath . $outFilePath)) {
+            throw new \Exception('SCSS file not compiled');
         }
 
-        return $relFilePath;
+        return '/' . $outFilePath;
     }
 
     /**
@@ -160,18 +165,34 @@ class ScssCompiler implements SingletonInterface
     protected function compile(string $inFilePath, string $outFilePath): void
     {
         $inFileInfo = PathUtility::pathinfo($inFilePath);
-        $this->compiler->setImportPaths($inFileInfo['dirname'] . '/');
+        $absOutFilePath = $this->sitePath . $outFilePath;
 
-        if($this->settings['sourcemaps'] === '1') {
-            $this->setSourceMap($outFilePath);
+        if (!in_array($inFileInfo['dirname'] . '/', $this->importFilePaths, true)) {
+            $this->compiler->addImportPath($inFileInfo['dirname'] . '/');
+        }
+
+        if ($this->settings['sourcemapType'] === 'file' && $this->settings['sourcemaps'] === '1') {
+            $this->compiler->setSourceMap(Compiler::SOURCE_MAP_FILE);
+            $this->compiler->setSourceMapOptions([
+                'sourceMapWriteTo'  => $absOutFilePath . '.map',
+                'sourceMapURL'      => $this->subPath . '/' . $outFilePath . '.map',
+                'sourceMapFilename' => $this->subPath . '/' . $outFilePath,
+                'sourceMapBasepath' => $this->sitePath,
+                'sourceRoot'        => $this->subPath . '/',
+            ]);
+        } elseif ($this->settings['sourcemaps'] === '1') {
+            $this->compiler->setSourceMap(Compiler::SOURCE_MAP_INLINE);
+        }
+
+        $compiledResult = $this->compiler->compileString('@import "' . $inFileInfo['basename'] . '";');
+
+        if ($this->settings['sourcemapType'] === 'file' && $this->settings['sourcemaps'] === '1') {
+            GeneralUtility::writeFileToTypo3tempDir($absOutFilePath . '.map', $compiledResult->getSourceMap());
         }
 
         GeneralUtility::writeFileToTypo3tempDir(
-            $this->sitePath . $outFilePath, 
-            $this->fixCssPaths(
-                $this->compiler->compile('@import "' . $inFileInfo['basename'] . '";'), 
-                $inFilePath
-            )
+            $absOutFilePath, 
+            $this->fixCssPaths($compiledResult->getCss(), $inFilePath)
         );
     }
 
@@ -215,32 +236,9 @@ class ScssCompiler implements SingletonInterface
      */
     protected function compiledFileExpired(string $inFilePath, string $outFilePath): bool
     {
-        $absInFilePath = $this->sitePath . '/' . $inFilePath;
-        $absOutFilePath = $this->sitePath . '/' . $outFilePath;
+        $absInFilePath = $this->sitePath . $inFilePath;
+        $absOutFilePath = $this->sitePath . $outFilePath;
 
         return (!file_exists($absOutFilePath) || filemtime($absInFilePath) > filemtime($absOutFilePath));
-    }
-
-    /**
-     * Set the sourcmap type and paths
-     *
-     * @param string $outFilePath
-     * @return void
-     */
-    protected function setSourceMap(string $outFilePath) : void
-    {
-        if ($this->settings['sourcemapType'] === 'file') {
-            $this->compiler->setSourceMap(Compiler::SOURCE_MAP_FILE);
-        } else {
-            $this->compiler->setSourceMap(Compiler::SOURCE_MAP_INLINE);
-        }
-
-        $this->compiler->setSourceMapOptions([
-            'sourceMapWriteTo'  => $this->sitePath . '/' . $outFilePath . '.map',
-            'sourceMapURL'      => $this->subPath . '/' . $outFilePath . '.map',
-            'sourceMapFilename' => $this->subPath . '/' . $outFilePath,
-            'sourceMapBasepath' => $this->sitePath,
-            'sourceRoot'        => $this->subPath . '/',
-        ]);
     }
 }
