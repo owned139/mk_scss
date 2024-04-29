@@ -125,7 +125,7 @@ class ScssCompiler implements SingletonInterface
     {
         if (PathUtility::isExtensionPath($relFilePath)) {
             // $absFilePath = GeneralUtility::getFileAbsFileName($relFilePath);
-            $relFilePath = trim(PathUtility::getPublicResourceWebPath($relFilePath), '/');
+            $relFilePath = trim(PathUtility::getPublicResourceWebPath($relFilePath, false), '/');
         }
 
         $fileNameHashed = $this->getFilenameHashed($relFilePath) . '.css';
@@ -137,7 +137,7 @@ class ScssCompiler implements SingletonInterface
             throw new \Exception('SCSS file not compiled');
         }
 
-        return '/' . $outFilePath;
+        return GeneralUtility::getIndpEnv('TYPO3_SITE_PATH') . $outFilePath;
     }
 
     /**
