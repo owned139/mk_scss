@@ -27,6 +27,7 @@ namespace MK\MkScss\Compiler;
 use TYPO3\CMS\Core\Utility\{GeneralUtility,PathUtility};
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManager;
 use ScssPhp\ScssPhp\{Compiler,OutputStyle};
 
 /**
@@ -86,12 +87,11 @@ class ScssCompiler implements SingletonInterface
             '/'
         );
 
-        if (!empty($GLOBALS['TSFE']) && !empty($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_mkscss.']['settings.'])) {
-            $this->settings = $GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_mkscss.']['settings.'];
-            $this->settings['sourcemapType'] = $this->settings['sourcemapType'] ?? 'file';
-            $this->settings['sourcemaps'] = $this->settings['sourcemaps'] ?? '0';
-            $this->settings['cssFormatter'] = $this->settings['cssFormatter'] ?? 'Expanded';
-        }
+        $configurationManager = GeneralUtility::makeInstance(ConfigurationManager::class);
+        $this->settings = $configurationManager->getConfiguration(ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, 'MkScss');
+        $this->settings['sourcemapType'] = $this->settings['sourcemapType'] ?? 'file';
+        $this->settings['sourcemaps'] = $this->settings['sourcemaps'] ?? '0';
+        $this->settings['cssFormatter'] = $this->settings['cssFormatter'] ?? 'Expanded';
 
         $this->compiler = GeneralUtility::makeInstance(Compiler::class);
         $cssFormatter = strtolower((string)$this->settings['cssFormatter']);
@@ -125,7 +125,7 @@ class ScssCompiler implements SingletonInterface
     {
         if (PathUtility::isExtensionPath($relFilePath)) {
             // $absFilePath = GeneralUtility::getFileAbsFileName($relFilePath);
-            $relFilePath = trim(PathUtility::getPublicResourceWebPath($relFilePath, false), '/');
+            $relFilePath = trim(PathUtility::getPublicResourceWebPath($relFilePath), '/');
         }
 
         $fileNameHashed = $this->getFilenameHashed($relFilePath) . '.css';
@@ -137,7 +137,7 @@ class ScssCompiler implements SingletonInterface
             throw new \Exception('SCSS file not compiled');
         }
 
-        return GeneralUtility::getIndpEnv('TYPO3_SITE_PATH') . $outFilePath;
+        return '/' . $outFilePath;
     }
 
     /**

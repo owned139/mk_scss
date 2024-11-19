@@ -14,12 +14,12 @@ $EM_CONF[$_EXTKEY] = [
     'uploadfolder' => false,
     'createDirs' => '',
     'clearCacheOnLoad' => false,
-    'version' => '3.0.1',
+    'version' => '4.0.0',
     'constraints' => [
         'depends' => [
-            'typo3' => '12.4.0-12.99.99',
+            'typo3' => '12.4.0-13.99.99',
             // ckeditor depends on scssphp and we need that too
-            'rte_ckeditor' => '12.4.0-12.99.99',
+            'rte_ckeditor' => '12.4.0-13.99.99',
         ],
     ],
 ];
