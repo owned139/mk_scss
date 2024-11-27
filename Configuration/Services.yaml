@@ -6,6 +6,8 @@ services:
 
   MK\MkScss\:
     resource: '../Classes/*'
+  ScssPhp\ScssPhp\:
+    resource: '../Vendor/scssphp-1.13.0/src/*'
 
   MK\MkScss\Backend\EventListener\CacheActionsEventListener:
     tags:
